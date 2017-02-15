@@ -126,12 +126,19 @@ public class TasksLocalDataSource implements TasksDataSource {
     @Override
     public Completable saveTasks(@NonNull List<Task> tasks) {
         return Observable.using(mDatabaseHelper::newTransaction,
-                transaction -> Observable.from(tasks)
-                        .doOnNext(task -> mDatabaseHelper.insert(TaskEntry.TABLE_NAME,
-                                toContentValues(task)))
-                        .doOnCompleted(transaction::markSuccessful)
-                        .toList(), BriteDatabase.Transaction::end)
+                transaction -> internalSaveTasks(tasks, transaction),
+                BriteDatabase.Transaction::end)
                 .toCompletable();
+    }
+
+    @NonNull
+    private Observable<List<Task>> internalSaveTasks(@NonNull List<Task> tasks,
+                                                     @NonNull BriteDatabase.Transaction transaction) {
+        return Observable.from(tasks)
+                .doOnNext(task -> mDatabaseHelper.insert(TaskEntry.TABLE_NAME,
+                        toContentValues(task)))
+                .doOnCompleted(transaction::markSuccessful)
+                .toList();
     }
 
     private ContentValues toContentValues(Task task) {

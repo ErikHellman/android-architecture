@@ -108,7 +108,6 @@ public class TasksRepositoryTest {
         // Then tasks were only requested once from remote and local sources
         verify(mTasksRemoteDataSource).getTasks();
         verify(mTasksLocalDataSource).getTasks();
-        //
 
         testSubscriber1.assertValue(TASKS);
         testSubscriber2.assertValue(TASKS);
@@ -162,7 +161,6 @@ public class TasksRepositoryTest {
         // Then the service API and persistent repository are called and the cache is updated
         verify(mTasksRemoteDataSource).saveTask(newTask);
         verify(mTasksLocalDataSource).saveTask(newTask);
-        ;
     }
 
     @Test

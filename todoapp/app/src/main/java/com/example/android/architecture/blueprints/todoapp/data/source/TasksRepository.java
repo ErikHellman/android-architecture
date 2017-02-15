@@ -20,7 +20,9 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
+import com.example.android.architecture.blueprints.todoapp.Injection;
 import com.example.android.architecture.blueprints.todoapp.data.Task;
+import com.example.android.architecture.blueprints.todoapp.util.schedulers.BaseSchedulerProvider;
 
 import java.util.List;
 import java.util.Map;
@@ -48,6 +50,7 @@ public class TasksRepository implements TasksDataSource {
 
     @NonNull
     private final TasksDataSource mTasksLocalDataSource;
+    private final BaseSchedulerProvider mBaseSchedulerProvider;
 
     // Prevent direct instantiation.
     private TasksRepository(@NonNull TasksDataSource tasksRemoteDataSource,
@@ -56,6 +59,8 @@ public class TasksRepository implements TasksDataSource {
         mTasksLocalDataSource = checkNotNull(tasksLocalDataSource);
         // Load remote tasks and store in local repository
         refreshTasks();
+
+        mBaseSchedulerProvider = Injection.provideSchedulerProvider();
     }
 
     /**
@@ -152,7 +157,7 @@ public class TasksRepository implements TasksDataSource {
     @Override
     public void refreshTasks() {
         mTasksRemoteDataSource.getTasks()
-                .subscribeOn(Schedulers.io())
+                .subscribeOn(mBaseSchedulerProvider.io())
                 .subscribe(mTasksLocalDataSource::saveTasks);
     }
 

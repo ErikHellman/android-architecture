@@ -29,7 +29,6 @@ import java.util.Map;
 
 import rx.Completable;
 import rx.Observable;
-import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
 /**
@@ -37,11 +36,10 @@ import rx.subjects.PublishSubject;
  */
 public class FakeTasksRemoteDataSource implements TasksDataSource {
 
-    private static FakeTasksRemoteDataSource INSTANCE;
-
     private static final Map<String, Task> TASKS_SERVICE_DATA = new LinkedHashMap<>();
+    private static FakeTasksRemoteDataSource INSTANCE;
+    private PublishSubject<Boolean> mRepeatWhen = PublishSubject.create();
 
-    private PublishSubject<Boolean> repeatWhen = PublishSubject.create();
     // Prevent direct instantiation.
     private FakeTasksRemoteDataSource() {
     }
@@ -56,29 +54,22 @@ public class FakeTasksRemoteDataSource implements TasksDataSource {
     @Override
     public Observable<List<Task>> getTasks() {
         Collection<Task> values = TASKS_SERVICE_DATA.values();
-        return Observable.from(values).toList().repeatWhen(new Func1<Observable<? extends Void>, Observable<Boolean>>() {
-            @Override
-            public Observable<Boolean> call(Observable<? extends Void> observable) {
-                return repeatWhen;
-            }
-        });
+        return Observable.from(values)
+                .toList()
+                .repeatWhen(observable -> mRepeatWhen);
     }
 
     @Override
     public Observable<Task> getTask(@NonNull String taskId) {
         Task task = TASKS_SERVICE_DATA.get(taskId);
-        return Observable.just(task).repeatWhen(new Func1<Observable<? extends Void>, Observable<Boolean>>() {
-            @Override
-            public Observable<Boolean> call(Observable<? extends Void> observable) {
-                return repeatWhen;
-            }
-        });
+        return Observable.just(task)
+                .repeatWhen(observable -> mRepeatWhen);
     }
 
     @Override
     public void saveTask(@NonNull Task task) {
         TASKS_SERVICE_DATA.put(task.getId(), task);
-        repeatWhen.onNext(true);
+        mRepeatWhen.onNext(true);
     }
 
     @Override
@@ -90,7 +81,7 @@ public class FakeTasksRemoteDataSource implements TasksDataSource {
     public void completeTask(@NonNull Task task) {
         Task completedTask = new Task(task.getTitle(), task.getDescription(), task.getId(), true);
         TASKS_SERVICE_DATA.put(task.getId(), completedTask);
-        repeatWhen.onNext(true);
+        mRepeatWhen.onNext(true);
     }
 
     @Override
@@ -98,14 +89,14 @@ public class FakeTasksRemoteDataSource implements TasksDataSource {
         Task task = TASKS_SERVICE_DATA.get(taskId);
         Task completedTask = new Task(task.getTitle(), task.getDescription(), task.getId(), true);
         TASKS_SERVICE_DATA.put(taskId, completedTask);
-        repeatWhen.onNext(true);
+        mRepeatWhen.onNext(true);
     }
 
     @Override
     public void activateTask(@NonNull Task task) {
         Task activeTask = new Task(task.getTitle(), task.getDescription(), task.getId());
         TASKS_SERVICE_DATA.put(task.getId(), activeTask);
-        repeatWhen.onNext(true);
+        mRepeatWhen.onNext(true);
     }
 
     @Override
@@ -113,7 +104,7 @@ public class FakeTasksRemoteDataSource implements TasksDataSource {
         Task task = TASKS_SERVICE_DATA.get(taskId);
         Task activeTask = new Task(task.getTitle(), task.getDescription(), task.getId());
         TASKS_SERVICE_DATA.put(taskId, activeTask);
-        repeatWhen.onNext(true);
+        mRepeatWhen.onNext(true);
     }
 
     @Override
@@ -125,23 +116,23 @@ public class FakeTasksRemoteDataSource implements TasksDataSource {
                 it.remove();
             }
         }
-        repeatWhen.onNext(true);
+        mRepeatWhen.onNext(true);
     }
 
     public void refreshTasks() {
-        repeatWhen.onNext(true);
+        mRepeatWhen.onNext(true);
     }
 
     @Override
     public void deleteTask(@NonNull String taskId) {
         TASKS_SERVICE_DATA.remove(taskId);
-        repeatWhen.onNext(true);
+        mRepeatWhen.onNext(true);
     }
 
     @Override
     public void deleteAllTasks() {
         TASKS_SERVICE_DATA.clear();
-        repeatWhen.onNext(true);
+        mRepeatWhen.onNext(true);
     }
 
     @VisibleForTesting
@@ -149,6 +140,6 @@ public class FakeTasksRemoteDataSource implements TasksDataSource {
         for (Task task : tasks) {
             TASKS_SERVICE_DATA.put(task.getId(), task);
         }
-        repeatWhen.onNext(true);
+        mRepeatWhen.onNext(true);
     }
 }
