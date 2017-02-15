@@ -21,9 +21,11 @@ import android.support.annotation.VisibleForTesting;
 
 import com.example.android.architecture.blueprints.todoapp.data.source.TasksDataSource;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -53,9 +55,8 @@ public class FakeTasksRemoteDataSource implements TasksDataSource {
 
     @Override
     public Observable<List<Task>> getTasks() {
-        Collection<Task> values = TASKS_SERVICE_DATA.values();
-        return Observable.from(values)
-                .toList()
+        List<Task> values = new ArrayList<>(TASKS_SERVICE_DATA.values());
+        return Observable.just(values)
                 .repeatWhen(observable -> mRepeatWhen);
     }
 
@@ -74,7 +75,9 @@ public class FakeTasksRemoteDataSource implements TasksDataSource {
 
     @Override
     public Completable saveTasks(@NonNull List<Task> tasks) {
-        return Observable.from(tasks).doOnNext(this::saveTask).toCompletable();
+        return Observable.from(tasks)
+                .doOnNext(this::saveTask)
+                .toCompletable();
     }
 
     @Override

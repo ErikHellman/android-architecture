@@ -125,18 +125,25 @@ public class TasksLocalDataSource implements TasksDataSource {
 
     @Override
     public Completable saveTasks(@NonNull List<Task> tasks) {
+        checkNotNull(tasks);
+
         return Observable.using(mDatabaseHelper::newTransaction,
-                transaction -> internalSaveTasks(tasks, transaction),
+                transaction -> inTransactionInsert(tasks, transaction),
                 BriteDatabase.Transaction::end)
                 .toCompletable();
     }
 
     @NonNull
-    private Observable<List<Task>> internalSaveTasks(@NonNull List<Task> tasks,
-                                                     @NonNull BriteDatabase.Transaction transaction) {
+    private Observable<List<Task>> inTransactionInsert(@NonNull List<Task> tasks,
+                                                       @NonNull BriteDatabase.Transaction transaction) {
+        checkNotNull(tasks);
+        checkNotNull(transaction);
+
         return Observable.from(tasks)
-                .doOnNext(task -> mDatabaseHelper.insert(TaskEntry.TABLE_NAME,
-                        toContentValues(task)))
+                .doOnNext(task -> {
+                    ContentValues values = toContentValues(task);
+                    mDatabaseHelper.insert(TaskEntry.TABLE_NAME, values);
+                })
                 .doOnCompleted(transaction::markSuccessful)
                 .toList();
     }
